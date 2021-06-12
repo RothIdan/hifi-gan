@@ -62,6 +62,7 @@ def inference(a):
             print(output_file)
 
 
+
 def main():
     print('Initializing Inference Process..')
 

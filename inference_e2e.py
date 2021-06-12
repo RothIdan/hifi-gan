@@ -7,9 +7,9 @@ import argparse
 import json
 import torch
 from scipy.io.wavfile import write
-from env import AttrDict
-from meldataset import MAX_WAV_VALUE
-from models import Generator
+from vocoder.env import AttrDict
+from vocoder.meldataset import MAX_WAV_VALUE
+from vocoder.models import Generator
 
 h = None
 device = None
@@ -57,16 +57,55 @@ def inference(a):
             print(output_file)
 
 
+
+def hifi_gan_mel2wav(mel, device):
+    print('Initializing Inference Process..')
+    config_file = os.path.join(os.path.split("vocoder/VCTK_V1/generator_v1")[0], 'config.json')
+    with open(config_file) as f:
+        data = f.read()
+
+    global h
+    json_config = json.loads(data)
+    h = AttrDict(json_config)
+
+    torch.manual_seed(h.seed)
+
+    generator = Generator(h).to(device)
+
+    state_dict_g = load_checkpoint("vocoder/VCTK_V1/generator_v1", device)
+    generator.load_state_dict(state_dict_g['generator'])
+
+    # filelist = os.listdir(a.input_mels_dir)
+
+    os.makedirs("data/reconstructed/", exist_ok=True)
+
+    generator.eval()
+    generator.remove_weight_norm()
+    with torch.no_grad():
+        # for i, filname in enumerate(filelist):
+        # x = np.load(os.path.join(a.input_mels_dir, filname))
+        # x = torch.FloatTensor(x).to(device)
+        y_g_hat = generator(mel)
+        audio = y_g_hat.squeeze()
+        audio = audio * MAX_WAV_VALUE
+        audio = audio.cpu().numpy().astype('int16')
+
+        output_file = os.path.join("data/reconstructed/",  '_generated_e2e.wav')
+        write(output_file, h.sampling_rate, audio)
+        print(output_file)
+
+
 def main():
     print('Initializing Inference Process..')
 
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--input_mels_dir', default='test_mel_files')
-    parser.add_argument('--output_dir', default='generated_files_from_mel')
-    parser.add_argument('--checkpoint_file', required=True)
-    a = parser.parse_args()
+    # parser = argparse.ArgumentParser()
+    # parser.add_argument('--input_mels_dir', default='test_mel_files')
+    # parser.add_argument('--output_dir', default='generated_files_from_mel')
+    # parser.add_argument('--checkpoint_file', required=True)
+    # a = parser.parse_args()
 
-    config_file = os.path.join(os.path.split(a.checkpoint_file)[0], 'config.json')
+    # config_file = os.path.join(os.path.split(a.checkpoint_file)[0], 'config.json')
+    config_file = os.path.join(os.path.split("vocoder/VCTK_V1/generator_v1")[0], 'config.json')
     with open(config_file) as f:
         data = f.read()
 
