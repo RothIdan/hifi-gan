@@ -58,8 +58,8 @@ def inference(a):
 
 
 
-def hifi_gan_mel2wav(mel, device):
-    print('Initializing Inference Process..')
+def hifi_gan_mel2wav(mel, device, output_name):
+    print('Initializing HiFi-GAN Inference Process..')
     config_file = os.path.join(os.path.split("vocoder/VCTK_V1/generator_v1")[0], 'config.json')
     with open(config_file) as f:
         data = f.read()
@@ -77,7 +77,7 @@ def hifi_gan_mel2wav(mel, device):
 
     # filelist = os.listdir(a.input_mels_dir)
 
-    os.makedirs("data/reconstructed/", exist_ok=True)
+    os.makedirs("data/generated/wav_hifi_gan/", exist_ok=True)
 
     generator.eval()
     generator.remove_weight_norm()
@@ -90,7 +90,7 @@ def hifi_gan_mel2wav(mel, device):
         audio = audio * MAX_WAV_VALUE
         audio = audio.cpu().numpy().astype('int16')
 
-        output_file = os.path.join("data/reconstructed/",  '_generated_e2e.wav')
+        output_file = os.path.join("data/generated/wav_hifi_gan/",  output_name + '.wav')
         write(output_file, h.sampling_rate, audio)
         print(output_file)
 
